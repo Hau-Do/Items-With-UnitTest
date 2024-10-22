@@ -9,11 +9,12 @@ type SortOrder = 'asc' | 'desc';
 const ITEMS_PER_PAGE = 10;
 
 const ItemList: React.FC = () => {
-  const location = useLocation();
-  const [inputText, setInputText] = useState<string>('');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [localItems, setLocalItems] = useState<Item[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
+    const location = useLocation();
+    const [inputText, setInputText] = useState<string>('');
+    const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+    const [localItems, setLocalItems] = useState<Item[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
   
   const { 
     getAllItems, 
@@ -24,12 +25,12 @@ const ItemList: React.FC = () => {
 
   // Load initial data when component mounts or on page refresh
   useEffect(() => {
-    if (location.pathname === '/' && !hasInitiallyLoaded) {
+    if (location.pathname === '/' || !hasInitiallyLoaded) {
       const storedItems = getAllItems();
       setLocalItems(storedItems);
       setHasInitiallyLoaded(true);
     }
-  }, [location.pathname, hasInitiallyLoaded, getAllItems, setHasInitiallyLoaded]);
+  }, [location.pathname, hasInitiallyLoaded]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -66,10 +67,20 @@ const ItemList: React.FC = () => {
     setLocalItems(sortedItems);
   };
 
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    // When changing items per page, we'll need to adjust the current page
+    // to ensure we're not showing an empty page
+    const newTotalPages = Math.ceil(localItems.length / newItemsPerPage);
+    if (currentPage > newTotalPages) {
+      setCurrentPage(newTotalPages);
+    }
+  };
+
   // Calculate pagination
-  const totalPages = Math.ceil(localItems.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const totalPages = Math.ceil(localItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
   const currentItems = localItems.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
@@ -121,14 +132,17 @@ const ItemList: React.FC = () => {
         </div>
         
         {localItems.length > 0 && (
-          <div className="list-footer">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-          </div>
-        )}
+        <div className="list-footer">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={localItems.length}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        </div>
+      )}
       </div>
     </div>
   );
