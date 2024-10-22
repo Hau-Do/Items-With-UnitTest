@@ -11,17 +11,18 @@ const ITEMS_PER_PAGE = 10;
 const ItemList: React.FC = () => {
     const location = useLocation();
     const [inputText, setInputText] = useState<string>('');
-    const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
     const [localItems, setLocalItems] = useState<Item[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [itemsPerPage, setItemsPerPage] = useState(5);
   
-  const { 
-    getAllItems, 
-    addItem, 
-    hasInitiallyLoaded, 
-    setHasInitiallyLoaded 
-  } = useItemStore();
+    const { 
+        getAllItems, 
+        addItem,
+        setSortOrder, 
+        sortOrder,
+        hasInitiallyLoaded, 
+        setHasInitiallyLoaded 
+    } = useItemStore();
 
   // Load initial data when component mounts or on page refresh
   useEffect(() => {
@@ -40,9 +41,15 @@ const ItemList: React.FC = () => {
         text: inputText,
         createdDate: new Date(),
       };
+
+      // Update local state immediately
+      // Sort according to current sort order
+      const updatedItems = sortOrder === 'asc' 
+        ? [...localItems, newItem].sort((a, b) => a.createdDate.getTime() - b.createdDate.getTime())
+        : [...localItems, newItem].sort((a, b) => b.createdDate.getTime() - a.createdDate.getTime());
       
       // Update local state immediately
-      setLocalItems(prevItems => [newItem, ...prevItems]);
+      setLocalItems(updatedItems);
       
       // Update Zustand store asynchronously
       setTimeout(() => {
@@ -56,8 +63,11 @@ const ItemList: React.FC = () => {
 
   const handleSort = () => {
     const newSortOrder: SortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    
+    // Update store sort order
     setSortOrder(newSortOrder);
     
+    // Update local items
     const sortedItems = [...localItems].sort((a, b) => {
       const dateA = new Date(a.createdDate).getTime();
       const dateB = new Date(b.createdDate).getTime();
@@ -65,16 +75,6 @@ const ItemList: React.FC = () => {
     });
     
     setLocalItems(sortedItems);
-  };
-
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage);
-    // When changing items per page, we'll need to adjust the current page
-    // to ensure we're not showing an empty page
-    const newTotalPages = Math.ceil(localItems.length / newItemsPerPage);
-    if (currentPage > newTotalPages) {
-      setCurrentPage(newTotalPages);
-    }
   };
 
   // Calculate pagination
@@ -89,6 +89,16 @@ const ItemList: React.FC = () => {
     const listBody = document.querySelector('.list-body');
     if (listBody) {
       listBody.scrollTop = 0;
+    }
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    // When changing items per page, we'll need to adjust the current page
+    // to ensure we're not showing an empty page
+    const newTotalPages = Math.ceil(localItems.length / newItemsPerPage);
+    if (currentPage > newTotalPages) {
+      setCurrentPage(newTotalPages);
     }
   };
 
@@ -132,17 +142,17 @@ const ItemList: React.FC = () => {
         </div>
         
         {localItems.length > 0 && (
-        <div className="list-footer">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            itemsPerPage={itemsPerPage}
-            totalItems={localItems.length}
-            onPageChange={handlePageChange}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
-        </div>
-      )}
+          <div className="list-footer">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              itemsPerPage={itemsPerPage}
+              totalItems={localItems.length}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
