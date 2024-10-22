@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+      "strict": true,
+      "target": "es6",
+      "module": "commonjs",
+      "jsx": "react",
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true,
+      "types": ["jest", "@testing-library/jest-dom"]
+    },
+    "exclude": [
+      "node_modules"
+    ]
+}
