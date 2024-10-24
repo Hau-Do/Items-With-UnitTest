@@ -1,26 +1,41 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import ItemList from './ItemList';
-import { useItemStore } from './store/itemStore';
+import { useItemStore } from '../store/itemStore';
+import type { Item, SortOrder } from '../store/itemStore';
 
-jest.mock('./store/itemStore');
+jest.mock('../store/itemStore');
+
+type MockStore = {
+  items: Item[];
+  sortOrder: SortOrder;
+  hasInitiallyLoaded: boolean;
+  addItem: jest.Mock<void, [Item]>;
+  getAllItems: jest.Mock<Item[], []>;
+  setSortOrder: jest.Mock<void, [SortOrder]>;
+  setHasInitiallyLoaded: jest.Mock<void, [boolean]>;
+};
 
 const mockUseItemStore = useItemStore as jest.MockedFunction<typeof useItemStore>;
 
 describe('ItemList', () => {
-  const mockStore = {
+  const user = userEvent.setup();
+  
+  const mockStore: MockStore = {
     items: [],
     sortOrder: 'desc' as const,
     hasInitiallyLoaded: false,
-    addItem: jest.fn(),
-    getAllItems: jest.fn(() => []),
-    setSortOrder: jest.fn(),
-    setHasInitiallyLoaded: jest.fn()
+    addItem: jest.fn<void, [Item]>(),
+    getAllItems: jest.fn<Item[], []>().mockReturnValue([]),
+    setSortOrder: jest.fn<void, [SortOrder]>(),
+    setHasInitiallyLoaded: jest.fn<void, [boolean]>()
   };
 
   beforeEach(() => {
     mockUseItemStore.mockReturnValue(mockStore);
+    jest.clearAllMocks();
   });
 
   const renderWithRouter = (component: React.ReactNode) => {
@@ -44,24 +59,24 @@ describe('ItemList', () => {
     const input = screen.getByPlaceholderText('Enter an item');
     const submitButton = screen.getByText('Add Item');
 
-    fireEvent.change(input, { target: { value: 'New Item' } });
-    fireEvent.click(submitButton);
+    await user.type(input, 'New Item');
+    await user.click(submitButton);
 
     expect(mockStore.addItem).toHaveBeenCalled();
     expect(input).toHaveValue('');
   });
 
-  it('handles sorting when sort button is clicked', () => {
+  it('handles sorting when sort button is clicked', async () => {
     renderWithRouter(<ItemList />);
     
     const sortButton = screen.getByText(/Newest First/);
-    fireEvent.click(sortButton);
+    await user.click(sortButton);
 
     expect(mockStore.setSortOrder).toHaveBeenCalledWith('asc');
   });
 
   it('displays items with correct pagination', () => {
-    const mockItems = Array.from({ length: 15 }, (_, i) => ({
+    const mockItems: Item[] = Array.from({ length: 15 }, (_, i) => ({
       id: `${i}`,
       text: `Item ${i}`,
       createdDate: new Date()
@@ -71,11 +86,12 @@ describe('ItemList', () => {
     
     renderWithRouter(<ItemList />);
     
-    expect(screen.getAllByText(/Item \d/).length).toBeLessThanOrEqual(5);
+    const items = screen.getAllByText(/Item \d/);
+    expect(items.length).toBeLessThanOrEqual(5);
   });
 
-  it('updates items per page when changed', () => {
-    const mockItems = Array.from({ length: 15 }, (_, i) => ({
+  it('updates items per page when changed', async () => {
+    const mockItems: Item[] = Array.from({ length: 15 }, (_, i) => ({
       id: `${i}`,
       text: `Item ${i}`,
       createdDate: new Date()
@@ -86,9 +102,10 @@ describe('ItemList', () => {
     renderWithRouter(<ItemList />);
     
     const select = screen.getByRole('combobox');
-    fireEvent.change(select, { target: { value: '10' } });
+    await user.selectOptions(select, '10');
 
-    expect(screen.getAllByText(/Item \d/).length).toBeLessThanOrEqual(10);
+    const items = screen.getAllByText(/Item \d/);
+    expect(items.length).toBeLessThanOrEqual(10);
   });
 
   it('loads items when component mounts', () => {

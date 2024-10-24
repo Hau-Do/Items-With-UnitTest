@@ -17,12 +17,13 @@ interface ItemState {
   setSortOrder: (order: SortOrder) => void;
   hasInitiallyLoaded: boolean;
   setHasInitiallyLoaded: (loaded: boolean) => void;
+  resetStore: () => void;
 }
 
 const sortItems = (items: Item[], sortOrder: SortOrder): Item[] => {
   return [...items].sort((a, b) => {
-    const dateA = new Date(a.createdDate).getTime();
-    const dateB = new Date(b.createdDate).getTime();
+    const dateA = a.createdDate.getTime();
+    const dateB = b.createdDate.getTime();
     return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
   });
 };
@@ -31,7 +32,7 @@ export const useItemStore = create<ItemState>()(
   persist(
     (set, get) => ({
       items: [],
-      sortOrder: 'desc' as SortOrder, // Default sort order
+      sortOrder: 'desc' as SortOrder,
       hasInitiallyLoaded: false,
 
       addItem: (item) => {
@@ -63,23 +64,19 @@ export const useItemStore = create<ItemState>()(
         }));
       },
 
-      setHasInitiallyLoaded: (loaded) => set({ hasInitiallyLoaded: loaded })
+      setHasInitiallyLoaded: (loaded) => set({ hasInitiallyLoaded: loaded }),
+
+      resetStore: () => {
+        set({ items: [], sortOrder: 'desc', hasInitiallyLoaded: false });
+      }
     }),
     {
       name: 'item-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ 
         items: state.items,
-        sortOrder: state.sortOrder // Persist sort order
-      }),
-      onRehydrateStorage: () => (state) => {
-        if (state?.items) {
-          state.items = state.items.map(item => ({
-            ...item,
-            createdDate: new Date(item.createdDate)
-          }));
-        }
-      }
+        sortOrder: state.sortOrder
+      })
     }
   )
 );

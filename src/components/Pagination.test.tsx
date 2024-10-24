@@ -1,8 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import Pagination from './Pagination';
 
 describe('Pagination', () => {
+  const user = userEvent.setup();
+
   const defaultProps = {
     currentPage: 1,
     totalPages: 5,
@@ -38,10 +41,10 @@ describe('Pagination', () => {
     expect(nextButton).toBeDisabled();
   });
 
-  it('calls onPageChange when clicking page numbers', () => {
+  it('calls onPageChange when clicking page numbers', async () => {
     render(<Pagination {...defaultProps} />);
     
-    fireEvent.click(screen.getByText('2'));
+    await user.click(screen.getByText('2'));
     expect(defaultProps.onPageChange).toHaveBeenCalledWith(2);
   });
 
@@ -55,25 +58,40 @@ describe('Pagination', () => {
     expect(options).toHaveLength(4); // [5, 10, 15, 20]
   });
 
-  it('calls onItemsPerPageChange when changing items per page', () => {
+  it('calls onItemsPerPageChange when changing items per page', async () => {
     render(<Pagination {...defaultProps} />);
     
     const select = screen.getByRole('combobox');
-    fireEvent.change(select, { target: { value: '20' } });
+    await user.selectOptions(select, '20');
     
     expect(defaultProps.onItemsPerPageChange).toHaveBeenCalledWith(20);
     expect(defaultProps.onPageChange).toHaveBeenCalledWith(1);
   });
 
   it('shows correct page range information', () => {
-    render(<Pagination {...defaultProps} currentPage={2} itemsPerPage={10} totalItems={45} />);
+    render(
+      <Pagination 
+        {...defaultProps} 
+        currentPage={2} 
+        itemsPerPage={10} 
+        totalItems={45} 
+      />
+    );
     
-    expect(screen.getByText('Showing 11 - 20 of 45 items')).toBeInTheDocument();
+    expect(
+      screen.getByText('Showing 11 - 20 of 45 items')
+    ).toBeInTheDocument();
   });
 
   it('handles ellipsis correctly for many pages', () => {
-    render(<Pagination {...defaultProps} totalPages={10} currentPage={5} />);
-    
-    expect(screen.getByText('...')).toBeInTheDocument();
+    render(
+      <Pagination 
+        {...defaultProps} 
+        totalPages={10} 
+        currentPage={5} 
+      />
+    );
+    const ellipsisElements = screen.getAllByRole('button', { name: '...' });
+    expect(ellipsisElements.length).toBeGreaterThan(0);
   });
 });
