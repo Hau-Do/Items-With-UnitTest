@@ -51,7 +51,6 @@ const Pagination: React.FC<PaginationProps> = ({
   const handleItemsPerPageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newItemsPerPage = parseInt(event.target.value, 10);
     onItemsPerPageChange(newItemsPerPage);
-    // Reset to first page when changing items per page
     onPageChange(1);
   };
 

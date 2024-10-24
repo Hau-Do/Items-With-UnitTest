@@ -24,7 +24,6 @@ const ItemList: React.FC = () => {
         setHasInitiallyLoaded 
     } = useItemStore();
 
-  // Load initial data when component mounts or on page refresh
   useEffect(() => {
     if (location.pathname === '/' || !hasInitiallyLoaded) {
       const storedItems = getAllItems();
@@ -57,7 +56,7 @@ const ItemList: React.FC = () => {
       }, 0);
       
       setInputText('');
-      setCurrentPage(1); // Reset to first page
+      setCurrentPage(1);
     }
   };
 
@@ -77,7 +76,6 @@ const ItemList: React.FC = () => {
     setLocalItems(sortedItems);
   };
 
-  // Calculate pagination
   const totalPages = Math.ceil(localItems.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -85,7 +83,6 @@ const ItemList: React.FC = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // Scroll to top of list when page changes
     const listBody = document.querySelector('.list-body');
     if (listBody) {
       listBody.scrollTop = 0;
@@ -94,8 +91,8 @@ const ItemList: React.FC = () => {
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
-    // When changing items per page, we'll need to adjust the current page
-    // to ensure we're not showing an empty page
+    
+    // When changing items per page, we'll need to adjust the current page to ensure we're not showing an empty page
     const newTotalPages = Math.ceil(localItems.length / newItemsPerPage);
     if (currentPage > newTotalPages) {
       setCurrentPage(newTotalPages);
